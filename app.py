@@ -1,11 +1,25 @@
 
 import streamlit as st
+import pandas as pd
+
+from database.banco import (
+    criar_tabela,
+    cadastrar_atleta,
+    listar_atletas,
+    contar_atletas
+)
+
 
 # Configurando a página
 st.set_page_config(
     page_title="Sistema de Cadastro de Atletas",
     layout="wide"
 )
+
+
+# Criando a tabela caso ainda nao exista
+criar_tabela()
+
 
 # Criando o menu lateral
 st.sidebar.title("Sistema de Atletas")
@@ -36,6 +50,11 @@ if pagina == "Início":
 
     st.subheader("Página inicial")
 
+    # Mostrando a quantidade de atletas cadastrados
+    total = contar_atletas()
+
+    st.metric("Atletas cadastrados", total)
+
     st.info("Bem-vindo ao sistema!")
 
 
@@ -58,6 +77,9 @@ elif pagina == "Cadastro de Atletas":
 
         data_nascimento = st.date_input(
             "Data de nascimento",
+            value=None,
+            min_value=__import__("datetime").date(1920, 1, 1),
+            max_value=__import__("datetime").date.today(),
             format="DD/MM/YYYY"
         )
 
@@ -114,7 +136,20 @@ elif pagina == "Cadastro de Atletas":
                 st.error("Selecione a modalidade.")
 
             else:
-                st.success("Dados preenchidos com sucesso!")
+
+                # Salvando os dados no banco
+                cadastrar_atleta(
+                    nome,
+                    data_nascimento.strftime("%d/%m/%Y") if data_nascimento else None,
+                    sexo,
+                    modalidade,
+                    equipe,
+                    posicao,
+                    telefone,
+                    email
+                )
+
+                st.success("Atleta cadastrado com sucesso!")
 
 
 # Página de consulta
@@ -122,7 +157,49 @@ elif pagina == "Consulta de Atletas":
 
     st.title("Consulta de Atletas")
 
-    st.write("Página para consultar atletas cadastrados.")
+    st.write("Aqui você pode visualizar os atletas cadastrados.")
+
+    st.divider()
+
+    # Buscando os atletas que estao salvos no banco
+    atletas = listar_atletas()
+
+    # Mostrando quantos atletas estao cadastrados
+    total = contar_atletas()
+
+    st.metric("Total de atletas", total)
+
+    # Verificando se existe algum cadastro
+    if atletas:
+
+        st.subheader("Atletas cadastrados")
+
+        # Criando os nomes das colunas
+        colunas = [
+            "ID",
+            "Nome completo",
+            "Data de nascimento",
+            "Sexo",
+            "Modalidade",
+            "Equipe ou clube",
+            "Posição",
+            "Telefone",
+            "E-mail"
+        ]
+
+        # Transformando os dados em uma tabela organizada
+        tabela = pd.DataFrame(atletas, columns=colunas)
+
+        # Mostrando a tabela na tela
+        st.dataframe(
+            tabela,
+            use_container_width=True,
+            hide_index=True
+        )
+
+    else:
+
+        st.info("Ainda não existem atletas cadastrados.")
 
 
 # Página de relatórios
@@ -131,3 +208,49 @@ elif pagina == "Relatórios":
     st.title("Relatórios")
 
     st.write("Página para visualizar os dados dos atletas.")
+
+    st.divider()
+
+    # Buscando os atletas cadastrados
+    atletas = listar_atletas()
+
+    # Mostrando o total de atletas
+    total = contar_atletas()
+
+    st.metric("Total de atletas cadastrados", total)
+
+    # Verificando se existem dados para os relatorios
+    if atletas:
+
+        # Organizando os dados em uma tabela
+        colunas = [
+            "ID",
+            "Nome completo",
+            "Data de nascimento",
+            "Sexo",
+            "Modalidade",
+            "Equipe ou clube",
+            "Posição",
+            "Telefone",
+            "E-mail"
+        ]
+
+        tabela = pd.DataFrame(atletas, columns=colunas)
+
+        st.subheader("Atletas por modalidade")
+
+        # Contando quantos atletas existem em cada modalidade
+        quantidade = tabela["Modalidade"].value_counts()
+
+        st.bar_chart(quantidade)
+
+        st.subheader("Atletas por sexo")
+
+        # Contando quantos atletas existem em cada categoria
+        quantidade_sexo = tabela["Sexo"].value_counts()
+
+        st.bar_chart(quantidade_sexo)
+
+    else:
+
+        st.info("Ainda não existem atletas cadastrados.")

@@ -4,7 +4,7 @@ import sqlite3
 import os
 
 
-# Definindo o caminho do banco de dados
+# Definindo onde o banco vai ficar salvo
 CAMINHO_BANCO = os.path.join(
     os.path.dirname(os.path.abspath(__file__)),
     "atletas.db"
@@ -41,7 +41,6 @@ def criar_tabela():
     """)
 
     conexao.commit()
-
     conexao.close()
 
 
@@ -65,7 +64,6 @@ def cadastrar_atleta(nome, data_nascimento, sexo, modalidade,
     ))
 
     conexao.commit()
-
     conexao.close()
 
 
@@ -83,6 +81,69 @@ def listar_atletas():
     conexao.close()
 
     return atletas
+
+
+# Buscando um atleta pelo ID
+def buscar_atleta(id_atleta):
+
+    conexao = conectar()
+
+    cursor = conexao.cursor()
+
+    cursor.execute(
+        "SELECT * FROM atletas WHERE id = ?",
+        (id_atleta,)
+    )
+
+    atleta = cursor.fetchone()
+
+    conexao.close()
+
+    return atleta
+
+
+# Alterando os dados de um atleta
+def editar_atleta(id_atleta, nome, data_nascimento, sexo,
+                  modalidade, equipe, posicao, telefone, email):
+
+    conexao = conectar()
+
+    cursor = conexao.cursor()
+
+    cursor.execute("""
+        UPDATE atletas
+        SET nome = ?,
+            data_nascimento = ?,
+            sexo = ?,
+            modalidade = ?,
+            equipe = ?,
+            posicao = ?,
+            telefone = ?,
+            email = ?
+        WHERE id = ?
+    """, (
+        nome, data_nascimento, sexo, modalidade,
+        equipe, posicao, telefone, email, id_atleta
+    ))
+
+    conexao.commit()
+    conexao.close()
+
+
+# Excluindo um atleta pelo ID
+def excluir_atleta(id_atleta):
+
+    conexao = conectar()
+
+    cursor = conexao.cursor()
+
+    cursor.execute(
+        "DELETE FROM atletas WHERE id = ?",
+        (id_atleta,)
+    )
+
+    conexao.commit()
+    conexao.close()
 
 
 # Contando quantos atletas estao cadastrados

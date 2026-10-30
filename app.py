@@ -5,6 +5,7 @@ import pandas as pd
 
 from datetime import date, datetime
 
+
 # Importando as funcoes do banco de dados
 from database.banco import (
     criar_tabela,
@@ -18,9 +19,131 @@ from database.banco import (
 
 # Configurando a pagina
 st.set_page_config(
-    page_title="Sistema de Cadastro de Atletas",
+    page_title="Gestão de Atletas",
     layout="wide"
 )
+
+
+# Aplicando o estilo visual do sistema
+st.markdown("""
+    <style>
+        [data-testid="stAppViewContainer"],
+        [data-testid="stMain"] {
+            background-color: #F1F5F9 !important;
+        }
+
+        [data-testid="stAppViewContainer"] h1,
+        [data-testid="stAppViewContainer"] h2,
+        [data-testid="stAppViewContainer"] h3,
+        [data-testid="stAppViewContainer"] h4 {
+            color: #142B4A !important;
+        }
+
+        [data-testid="stAppViewContainer"] p,
+        [data-testid="stAppViewContainer"] label {
+            color: #334155;
+        }
+
+        [data-testid="stSidebar"] {
+            background-color: #142B4A !important;
+        }
+
+        [data-testid="stSidebar"] * {
+            color: #FFFFFF !important;
+        }
+
+        .cabecalho {
+            background-color: #142B4A !important;
+            padding: 28px;
+            border-radius: 14px;
+            margin-bottom: 20px;
+        }
+
+        .cabecalho h1 {
+            color: #FFFFFF !important;
+            margin-bottom: 5px;
+        }
+
+        .cabecalho p {
+            color: #DCE8F5 !important;
+            margin-bottom: 0;
+        }
+
+        .boas-vindas {
+            background-color: #FFFFFF !important;
+            padding: 24px;
+            border-radius: 12px;
+            border-left: 5px solid #42A5A0;
+            margin-bottom: 25px;
+        }
+
+        .boas-vindas h3 {
+            color: #142B4A !important;
+            margin-top: 0;
+        }
+
+        .boas-vindas p {
+            color: #64748B !important;
+            margin-bottom: 0;
+        }
+
+        [data-testid="stMetric"] {
+            background-color: #FFFFFF !important;
+            padding: 20px;
+            border-radius: 12px;
+            border-left: 5px solid #42A5A0;
+            box-shadow: 0 2px 8px rgba(20, 43, 74, 0.08);
+        }
+
+        [data-testid="stMetricLabel"] {
+            color: #64748B !important;
+        }
+
+        [data-testid="stMetricValue"] {
+            color: #142B4A !important;
+        }
+
+        [data-testid="stForm"] {
+            background-color: #FFFFFF !important;
+            padding: 25px;
+            border-radius: 12px;
+            border: 1px solid #E2E8F0;
+        }
+
+        .stButton > button,
+        .stFormSubmitButton > button {
+            background-color: #245B8F !important;
+            color: #FFFFFF !important;
+            border: none;
+            border-radius: 8px;
+            padding: 10px 18px;
+            font-weight: 600;
+        }
+
+        .stButton > button:hover,
+        .stFormSubmitButton > button:hover {
+            background-color: #42A5A0 !important;
+            color: #FFFFFF !important;
+        }
+
+        [data-testid="stDataFrame"] {
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        hr {
+            border-color: #CBD5E1;
+        }
+
+        #MainMenu {
+            visibility: hidden;
+        }
+
+        footer {
+            visibility: hidden;
+        }
+    </style>
+""", unsafe_allow_html=True)
 
 
 # Criando a tabela caso ainda nao exista
@@ -64,84 +187,220 @@ def criar_dataframe(atletas):
     return pd.DataFrame(atletas, columns=colunas)
 
 
+# Calculando a idade dos atletas
+def calcular_idade(data_nascimento):
+
+    try:
+
+        nascimento = datetime.strptime(
+            data_nascimento,
+            "%d/%m/%Y"
+        ).date()
+
+        hoje = date.today()
+
+        idade = hoje.year - nascimento.year
+
+        if (hoje.month, hoje.day) < (
+            nascimento.month,
+            nascimento.day
+        ):
+            idade -= 1
+
+        return idade
+
+    except (ValueError, TypeError):
+
+        return None
+
+
+# Exibindo mensagens de sucesso
+def mostrar_mensagem(chave):
+
+    if chave in st.session_state:
+
+        st.success(st.session_state[chave])
+
+        del st.session_state[chave]
+
+
+# Criando o cabecalho das paginas
+def mostrar_cabecalho(titulo, descricao):
+
+    st.markdown(f"""
+        <div class="cabecalho">
+            <h1>{titulo}</h1>
+            <p>{descricao}</p>
+        </div>
+    """, unsafe_allow_html=True)
+
+
+# Alterando a pagina pelos atalhos
+def navegar(pagina_destino):
+
+    st.session_state["pagina_menu"] = pagina_destino
+
+
 # Criando o menu lateral
-st.sidebar.title("Sistema de Atletas")
+st.sidebar.markdown("""
+    <div style="padding: 10px 0;">
+        <h2 style="color: white !important; font-size: 23px;">
+            GESTÃO DE ATLETAS
+        </h2>
+        <p style="color: #CBD5E1 !important; font-size: 13px;">
+            Sistema de gerenciamento esportivo
+        </p>
+    </div>
+""", unsafe_allow_html=True)
+
+st.sidebar.divider()
+
+if "pagina_menu" not in st.session_state:
+    st.session_state["pagina_menu"] = "Início"
 
 pagina = st.sidebar.radio(
-    "Navegação",
+    "MENU PRINCIPAL",
     [
         "Início",
         "Cadastro de Atletas",
         "Consulta de Atletas",
         "Editar Atleta",
         "Relatórios"
-    ]
+    ],
+    key="pagina_menu"
 )
 
+st.sidebar.divider()
 
-# Mostrando mensagens de sucesso depois das alteracoes
-if "mensagem" in st.session_state:
-
-    st.success(st.session_state["mensagem"])
-
-    del st.session_state["mensagem"]
+st.sidebar.caption("Sistema de Gestão Esportiva")
 
 
 # Página inicial
 if pagina == "Início":
 
-    st.title("Sistema de Cadastro de Atletas")
-
-    st.write(
-        "Sistema para cadastro, consulta e gerenciamento "
-        "de informações de atletas."
+    mostrar_cabecalho(
+        "Gestão de Atletas",
+        "Gerencie cadastros e acompanhe informações esportivas em um só lugar."
     )
 
-    st.divider()
-
-    # Buscando a quantidade de atletas cadastrados
-    total = contar_atletas()
+    # Apresentacao do sistema
+    st.markdown("""
+        <div class="boas-vindas">
+            <h3>Bem-vindo ao Gestão de Atletas!</h3>
+            <p>
+                Este sistema foi desenvolvido para facilitar o cadastro,
+                a organização e o acompanhamento de atletas.
+                Consulte informações, gerencie equipes e acompanhe
+                indicadores esportivos em um só lugar.
+            </p>
+        </div>
+    """, unsafe_allow_html=True)
 
     atletas = listar_atletas()
 
-    # Mostrando os principais indicadores
-    col1, col2 = st.columns(2)
+    tabela = criar_dataframe(atletas)
+
+    total = contar_atletas()
+
+    modalidades_cadastradas = (
+        tabela["Modalidade"].nunique()
+        if not tabela.empty else 0
+    )
+
+    equipes_cadastradas = (
+        tabela["Equipe ou clube"].replace("", pd.NA).dropna().nunique()
+        if not tabela.empty else 0
+    )
+
+    st.subheader("Visão geral")
+
+    # Mostrando os indicadores principais
+    col1, col2, col3 = st.columns(3)
 
     with col1:
         st.metric("Total de atletas", total)
 
     with col2:
-        modalidades_cadastradas = len(
-            set(atleta[4] for atleta in atletas)
-        )
+        st.metric("Modalidades", modalidades_cadastradas)
 
-        st.metric("Modalidades cadastradas", modalidades_cadastradas)
+    with col3:
+        st.metric("Equipes e clubes", equipes_cadastradas)
 
     st.divider()
 
-    st.subheader("Página inicial")
+    col1, col2 = st.columns([1.4, 1])
 
-    st.info("Bem-vindo ao sistema de gerenciamento de atletas!")
+    with col1:
 
-    st.write(
-        "Utilize o menu lateral para cadastrar, consultar, "
-        "editar e visualizar os dados dos atletas."
-    )
+        st.subheader("Atletas por modalidade")
+
+        if atletas:
+
+            quantidade_modalidade = tabela["Modalidade"].value_counts()
+
+            st.bar_chart(
+                quantidade_modalidade,
+                color="#245B8F"
+            )
+
+        else:
+
+            st.info("Os gráficos serão exibidos após os primeiros cadastros.")
+
+    with col2:
+
+        st.subheader("Acesso rápido")
+
+        st.write("Acesse as principais funcionalidades.")
+
+        st.button(
+            "Cadastrar atleta",
+            use_container_width=True,
+            on_click=navegar,
+            args=("Cadastro de Atletas",)
+        )
+
+        st.button(
+            "Consultar atletas",
+            use_container_width=True,
+            on_click=navegar,
+            args=("Consulta de Atletas",)
+        )
+
+    st.divider()
+
+    st.subheader("Atletas cadastrados recentemente")
+
+    if atletas:
+
+        tabela_recente = tabela.sort_values(
+            by="ID",
+            ascending=False
+        ).head(5)
+
+        st.dataframe(
+            tabela_recente[
+                ["ID", "Nome completo", "Modalidade", "Equipe ou clube"]
+            ],
+            use_container_width=True,
+            hide_index=True
+        )
+
+    else:
+
+        st.info("Ainda não existem atletas cadastrados.")
 
 
 # Página de cadastro
 elif pagina == "Cadastro de Atletas":
 
-    st.title("Cadastro de Atletas")
+    mostrar_cabecalho(
+        "Cadastro de Atletas",
+        "Adicione novos atletas e registre suas informações."
+    )
 
-    st.write("Preencha os dados abaixo para cadastrar um atleta.")
-
-    st.divider()
-
-    # Criando o formulario de cadastro
     with st.form("formulario_atleta"):
 
-        # Dados pessoais
         st.subheader("Dados pessoais")
 
         nome = st.text_input("Nome completo")
@@ -161,7 +420,6 @@ elif pagina == "Cadastro de Atletas":
 
         st.divider()
 
-        # Dados esportivos
         st.subheader("Informações esportivas")
 
         modalidade = st.selectbox(
@@ -175,37 +433,43 @@ elif pagina == "Cadastro de Atletas":
 
         st.divider()
 
-        # Dados de contato
-        st.subheader("Contato")
+        st.subheader("Informações de contato")
 
         telefone = st.text_input("Telefone")
 
         email = st.text_input("E-mail")
 
-        # Botao para cadastrar
         cadastrar = st.form_submit_button(
             "Cadastrar atleta",
             use_container_width=True
         )
 
-        # Verificando os campos obrigatorios
         if cadastrar:
 
             if not nome.strip():
+
                 st.error("Informe o nome do atleta.")
 
             elif data_nascimento is None:
+
                 st.error("Informe a data de nascimento.")
 
             elif sexo == "Selecione":
+
                 st.error("Selecione o sexo.")
 
             elif modalidade == "Selecione":
+
                 st.error("Selecione a modalidade.")
+
+            elif email.strip() and (
+                "@" not in email or "." not in email.split("@")[-1]
+            ):
+
+                st.error("Informe um e-mail válido.")
 
             else:
 
-                # Salvando os dados no banco
                 cadastrar_atleta(
                     nome.strip(),
                     data_nascimento.strftime("%d/%m/%Y"),
@@ -217,23 +481,24 @@ elif pagina == "Cadastro de Atletas":
                     email.strip()
                 )
 
-                st.session_state["mensagem"] = (
+                st.session_state["feedback_cadastro"] = (
                     "Atleta cadastrado com sucesso!"
                 )
 
                 st.rerun()
 
+    # A mensagem aparece abaixo do formulario
+    mostrar_mensagem("feedback_cadastro")
+
 
 # Página de consulta
 elif pagina == "Consulta de Atletas":
 
-    st.title("Consulta de Atletas")
+    mostrar_cabecalho(
+        "Consulta de Atletas",
+        "Pesquise, filtre e visualize os atletas cadastrados."
+    )
 
-    st.write("Pesquise e visualize os atletas cadastrados.")
-
-    st.divider()
-
-    # Buscando os atletas no banco
     atletas = listar_atletas()
 
     st.metric("Total de atletas cadastrados", len(atletas))
@@ -242,14 +507,13 @@ elif pagina == "Consulta de Atletas":
 
         tabela = criar_dataframe(atletas)
 
-        st.subheader("Pesquisar atletas")
+        st.subheader("Filtros de pesquisa")
 
-        # Campo para pesquisar pelo nome
         pesquisa = st.text_input(
-            "Digite o nome do atleta"
+            "Pesquisar pelo nome",
+            placeholder="Digite o nome do atleta..."
         )
 
-        # Criando os filtros
         col1, col2 = st.columns(2)
 
         modalidades_disponiveis = [
@@ -263,18 +527,17 @@ elif pagina == "Consulta de Atletas":
         with col1:
 
             filtro_modalidade = st.selectbox(
-                "Filtrar por modalidade",
+                "Modalidade",
                 modalidades_disponiveis
             )
 
         with col2:
 
             filtro_sexo = st.selectbox(
-                "Filtrar por sexo",
+                "Sexo",
                 sexos_disponiveis
             )
 
-        # Aplicando os filtros na tabela
         tabela_filtrada = tabela.copy()
 
         if pesquisa.strip():
@@ -301,16 +564,15 @@ elif pagina == "Consulta de Atletas":
 
         st.divider()
 
-        st.subheader("Atletas encontrados")
+        st.subheader("Resultados da pesquisa")
 
-        # Mostrando os resultados
         st.dataframe(
             tabela_filtrada,
             use_container_width=True,
             hide_index=True
         )
 
-        st.write(
+        st.caption(
             f"Resultados encontrados: {len(tabela_filtrada)}"
         )
 
@@ -326,17 +588,18 @@ elif pagina == "Consulta de Atletas":
 # Página de edição
 elif pagina == "Editar Atleta":
 
-    st.title("Editar ou excluir atleta")
+    mostrar_cabecalho(
+        "Gerenciar Atletas",
+        "Altere informações ou remova cadastros existentes."
+    )
 
-    st.write("Selecione um atleta para alterar ou excluir seus dados.")
-
-    st.divider()
+    mostrar_mensagem("feedback_edicao")
+    mostrar_mensagem("feedback_exclusao")
 
     atletas = listar_atletas()
 
     if atletas:
 
-        # Escolhendo qual atleta sera alterado
         atleta_selecionado = st.selectbox(
             "Selecione o atleta",
             atletas,
@@ -347,15 +610,17 @@ elif pagina == "Editar Atleta":
 
         id_atleta = atleta_selecionado[0]
 
-        # Recuperando os dados atuais
         nome_atual = atleta_selecionado[1]
 
         try:
+
             data_atual = datetime.strptime(
                 atleta_selecionado[2],
                 "%d/%m/%Y"
             ).date()
+
         except (ValueError, TypeError):
+
             data_atual = date.today()
 
         sexo_atual = atleta_selecionado[3]
@@ -370,9 +635,10 @@ elif pagina == "Editar Atleta":
 
         email_atual = atleta_selecionado[8] or ""
 
+        st.divider()
+
         st.subheader("Alterar informações")
 
-        # Criando o formulario de edicao
         with st.form("formulario_edicao"):
 
             nome = st.text_input(
@@ -435,12 +701,17 @@ elif pagina == "Editar Atleta":
                 use_container_width=True
             )
 
-            # Salvando as alteracoes
             if salvar:
 
                 if not nome.strip():
 
                     st.error("O nome do atleta é obrigatório.")
+
+                elif email.strip() and (
+                    "@" not in email or "." not in email.split("@")[-1]
+                ):
+
+                    st.error("Informe um e-mail válido.")
 
                 else:
 
@@ -456,7 +727,7 @@ elif pagina == "Editar Atleta":
                         email.strip()
                     )
 
-                    st.session_state["mensagem"] = (
+                    st.session_state["feedback_edicao"] = (
                         "Dados do atleta atualizados com sucesso!"
                     )
 
@@ -467,24 +738,24 @@ elif pagina == "Editar Atleta":
         st.subheader("Excluir atleta")
 
         st.warning(
-            f"Você está selecionando o cadastro de {nome_atual}."
+            f"Cadastro selecionado: {nome_atual}"
         )
 
-        # Pedindo confirmacao antes de excluir
         confirmar = st.checkbox(
             "Confirmo que desejo excluir este atleta.",
-            key="confirmar_exclusao"
+            key=f"confirmar_exclusao_{id_atleta}"
         )
 
         if st.button(
             "Excluir atleta",
             disabled=not confirmar,
-            type="secondary"
+            type="secondary",
+            use_container_width=True
         ):
 
             excluir_atleta(id_atleta)
 
-            st.session_state["mensagem"] = (
+            st.session_state["feedback_exclusao"] = (
                 "Atleta excluído com sucesso!"
             )
 
@@ -498,11 +769,10 @@ elif pagina == "Editar Atleta":
 # Página de relatórios
 elif pagina == "Relatórios":
 
-    st.title("Relatórios")
-
-    st.write("Visualize informações e estatísticas dos atletas.")
-
-    st.divider()
+    mostrar_cabecalho(
+        "Relatórios",
+        "Acompanhe indicadores e analise o perfil dos atletas cadastrados."
+    )
 
     atletas = listar_atletas()
 
@@ -510,8 +780,21 @@ elif pagina == "Relatórios":
 
         tabela = criar_dataframe(atletas)
 
-        # Mostrando os indicadores
-        col1, col2, col3 = st.columns(3)
+        # Calculando a idade dos atletas
+        tabela["Idade"] = tabela["Data de nascimento"].apply(
+            calcular_idade
+        )
+
+        # Organizando os nomes das equipes
+        tabela["Equipe ou clube"] = (
+            tabela["Equipe ou clube"]
+            .replace("", "Não informada")
+            .fillna("Não informada")
+        )
+
+        st.subheader("Indicadores gerais")
+
+        col1, col2, col3, col4 = st.columns(4)
 
         with col1:
 
@@ -529,32 +812,114 @@ elif pagina == "Relatórios":
 
         with col3:
 
+            total_equipes = (
+                tabela["Equipe ou clube"]
+                .replace("Não informada", pd.NA)
+                .dropna()
+                .nunique()
+            )
+
             st.metric(
-                "Equipes",
-                tabela["Equipe ou clube"].replace("", pd.NA).nunique()
+                "Equipes e clubes",
+                total_equipes
+            )
+
+        with col4:
+
+            idades_validas = tabela["Idade"].dropna()
+
+            idade_media = (
+                round(idades_validas.mean(), 1)
+                if not idades_validas.empty else 0
+            )
+
+            st.metric(
+                "Idade média",
+                f"{idade_media} anos"
             )
 
         st.divider()
 
-        # Grafico de atletas por modalidade
-        st.subheader("Atletas por modalidade")
+        st.subheader("Distribuição dos atletas")
 
-        quantidade_modalidade = (
-            tabela["Modalidade"]
-            .value_counts()
-        )
+        col1, col2 = st.columns(2)
 
-        st.bar_chart(quantidade_modalidade)
+        with col1:
 
-        # Grafico de atletas por sexo
-        st.subheader("Atletas por sexo")
+            st.write("**Atletas por modalidade**")
 
-        quantidade_sexo = tabela["Sexo"].value_counts()
+            quantidade_modalidade = tabela["Modalidade"].value_counts()
 
-        st.bar_chart(quantidade_sexo)
+            st.bar_chart(
+                quantidade_modalidade,
+                color="#245B8F"
+            )
 
-        # Mostrando os dados completos
-        st.subheader("Resumo dos cadastros")
+        with col2:
+
+            st.write("**Atletas por sexo**")
+
+            quantidade_sexo = tabela["Sexo"].value_counts()
+
+            st.bar_chart(
+                quantidade_sexo,
+                color="#42A5A0"
+            )
+
+        st.divider()
+
+        col1, col2 = st.columns(2)
+
+        with col1:
+
+            st.write("**Atletas por equipe ou clube**")
+
+            quantidade_equipes = tabela["Equipe ou clube"].value_counts()
+
+            st.bar_chart(
+                quantidade_equipes,
+                color="#245B8F"
+            )
+
+        with col2:
+
+            st.write("**Distribuição por faixa etária**")
+
+            idades_validas = tabela["Idade"].dropna()
+
+            if not idades_validas.empty:
+
+                faixas = pd.cut(
+                    idades_validas,
+                    bins=[0, 12, 17, 23, 30, 100],
+                    labels=[
+                        "Até 12 anos",
+                        "13 a 17 anos",
+                        "18 a 23 anos",
+                        "24 a 30 anos",
+                        "Acima de 30 anos"
+                    ]
+                )
+
+                quantidade_faixas = (
+                    faixas.value_counts()
+                    .sort_index()
+                )
+
+                st.bar_chart(
+                    quantidade_faixas,
+                    color="#42A5A0"
+                )
+
+            else:
+
+                st.info(
+                    "Não existem datas de nascimento válidas para calcular as idades."
+                )
+
+        st.divider()
+
+        st.subheader("Dados dos atletas")
 
         st.dataframe(
             tabela,
@@ -562,6 +927,23 @@ elif pagina == "Relatórios":
             hide_index=True
         )
 
+        # Preparando a exportacao dos dados
+        arquivo_csv = tabela.to_csv(
+            index=False,
+            sep=";",
+            encoding="utf-8-sig"
+        ).encode("utf-8-sig")
+
+        st.download_button(
+            label="Exportar relatório em CSV",
+            data=arquivo_csv,
+            file_name="relatorio_atletas.csv",
+            mime="text/csv",
+            use_container_width=True
+        )
+
     else:
 
-        st.info("Ainda não existem atletas cadastrados para gerar relatórios.")
+        st.info(
+            "Ainda não existem atletas cadastrados para gerar relatórios."
+        )

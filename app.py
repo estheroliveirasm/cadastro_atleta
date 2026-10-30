@@ -1,12 +1,8 @@
-
-# Importando as bibliotecas
 import streamlit as st
 import pandas as pd
 
 from datetime import date, datetime
 
-
-# Importando as funcoes do banco de dados
 from database.banco import (
     criar_tabela,
     cadastrar_atleta,
@@ -16,15 +12,11 @@ from database.banco import (
     excluir_atleta
 )
 
-
-# Configurando a pagina
 st.set_page_config(
     page_title="Gestão de Atletas",
     layout="wide"
 )
 
-
-# Aplicando o estilo visual do sistema
 st.markdown("""
     <style>
         [data-testid="stAppViewContainer"],
@@ -145,12 +137,8 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-
-# Criando a tabela caso ainda nao exista
 criar_tabela()
 
-
-# Definindo as opcoes do sistema
 modalidades = [
     "Vôlei",
     "Futebol",
@@ -168,8 +156,6 @@ sexos = [
     "Prefiro não informar"
 ]
 
-
-# Organizando os dados em uma tabela
 def criar_dataframe(atletas):
 
     colunas = [
@@ -186,8 +172,6 @@ def criar_dataframe(atletas):
 
     return pd.DataFrame(atletas, columns=colunas)
 
-
-# Calculando a idade dos atletas
 def calcular_idade(data_nascimento):
 
     try:
@@ -213,8 +197,6 @@ def calcular_idade(data_nascimento):
 
         return None
 
-
-# Exibindo mensagens de sucesso
 def mostrar_mensagem(chave):
 
     if chave in st.session_state:
@@ -223,8 +205,6 @@ def mostrar_mensagem(chave):
 
         del st.session_state[chave]
 
-
-# Criando o cabecalho das paginas
 def mostrar_cabecalho(titulo, descricao):
 
     st.markdown(f"""
@@ -234,14 +214,10 @@ def mostrar_cabecalho(titulo, descricao):
         </div>
     """, unsafe_allow_html=True)
 
-
-# Alterando a pagina pelos atalhos
 def navegar(pagina_destino):
 
     st.session_state["pagina_menu"] = pagina_destino
 
-
-# Criando o menu lateral
 st.sidebar.markdown("""
     <div style="padding: 10px 0;">
         <h2 style="color: white !important; font-size: 23px;">
@@ -274,8 +250,6 @@ st.sidebar.divider()
 
 st.sidebar.caption("Sistema de Gestão Esportiva")
 
-
-# Página inicial
 if pagina == "Início":
 
     mostrar_cabecalho(
@@ -283,7 +257,6 @@ if pagina == "Início":
         "Gerencie cadastros e acompanhe informações esportivas em um só lugar."
     )
 
-    # Apresentacao do sistema
     st.markdown("""
         <div class="boas-vindas">
             <h3>Bem-vindo ao Gestão de Atletas!</h3>
@@ -314,7 +287,6 @@ if pagina == "Início":
 
     st.subheader("Visão geral")
 
-    # Mostrando os indicadores principais
     col1, col2, col3 = st.columns(3)
 
     with col1:
@@ -391,7 +363,6 @@ if pagina == "Início":
         st.info("Ainda não existem atletas cadastrados.")
 
 
-# Página de cadastro
 elif pagina == "Cadastro de Atletas":
 
     mostrar_cabecalho(
@@ -491,7 +462,6 @@ elif pagina == "Cadastro de Atletas":
     mostrar_mensagem("feedback_cadastro")
 
 
-# Página de consulta
 elif pagina == "Consulta de Atletas":
 
     mostrar_cabecalho(
@@ -585,7 +555,6 @@ elif pagina == "Consulta de Atletas":
         st.info("Ainda não existem atletas cadastrados.")
 
 
-# Página de edição
 elif pagina == "Editar Atleta":
 
     mostrar_cabecalho(
@@ -766,7 +735,6 @@ elif pagina == "Editar Atleta":
         st.info("Não existem atletas cadastrados para editar ou excluir.")
 
 
-# Página de relatórios
 elif pagina == "Relatórios":
 
     mostrar_cabecalho(
@@ -780,12 +748,10 @@ elif pagina == "Relatórios":
 
         tabela = criar_dataframe(atletas)
 
-        # Calculando a idade dos atletas
         tabela["Idade"] = tabela["Data de nascimento"].apply(
             calcular_idade
         )
 
-        # Organizando os nomes das equipes
         tabela["Equipe ou clube"] = (
             tabela["Equipe ou clube"]
             .replace("", "Não informada")
@@ -927,7 +893,6 @@ elif pagina == "Relatórios":
             hide_index=True
         )
 
-        # Preparando a exportacao dos dados
         arquivo_csv = tabela.to_csv(
             index=False,
             sep=";",
